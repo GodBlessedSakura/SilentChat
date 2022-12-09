@@ -19,11 +19,12 @@ class ConversationBot():
 
     def action(self, user_action):
         if not user_action:
-            user_action = '如果我什么都不说，你要怎么回复我。'
-        if user_action[-1] != "。":
-            user_action = user_action + "。"
-        prompt = user_action
-        resp = self.chatbot.get_chat_response(
-            prompt
-        )  # Sends a request to the API and returns the response by OpenAI
-        self.response = resp["message"]
+            self.response = '不好意思，这条消息我没能识别出来。请换个说法可以吗？'
+        else:
+            if user_action[-1] != "。":
+                user_action = user_action + "。"
+            prompt = user_action
+            resp = self.chatbot.get_chat_response(
+                prompt
+            )  # Sends a request to the API and returns the response by OpenAI
+            self.response = resp["message"]

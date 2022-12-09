@@ -3,8 +3,12 @@ import time
 import xlrd
 import pyperclip
 import uuid
+import pytesseract
 from PIL import Image
-from pytesseract import image_to_string
+from conversation import ConversationBot
+from config import config
+
+pytesseract.pytesseract.tesseract_cmd = 'C:/Program Files/Tesseract-OCR/tesseract.exe'
 
 #定义鼠标事件
 
@@ -24,8 +28,8 @@ def mouseClick(clickTimes, lOrR, img, reTry):
                                 duration=0.2,
                                 button=lOrR)
                 break
-            print(img)
-            print("未找到匹配图片,0.1秒后重试")
+            # print(img)
+            # print("未找到匹配图片,0.1秒后重试")
             time.sleep(0.1)
     elif reTry == -1:  # 一直重复
         while True:
@@ -99,7 +103,7 @@ def dataCheck(sheet1):
                 checkCmd = False
         # 输入类型，内容不能为空
         if cmdType.value == 4.0:
-            if cmdValue.ctype == 0:
+            if cmdValue.ctype != 0:
                 print('第', i + 1, "行,第2列数据有毛病")
                 checkCmd = False
         # 等待类型，内容必须为数字
@@ -150,26 +154,65 @@ def mainWork(img):
                 reTry = sheet1.row(i)[2].value
             mouseClick(1, "right", img, reTry)
             print("右键", img)
-        #4代表输入
+        #4代表进行一次会话，一次会话维持100s
         elif cmdType.value == 4.0:
-            # inputValue = sheet1.row(i)[1].value
-            # pyperclip.copy(inputValue)
-
-            # 进行截图
+            # 初始化聊天机器人
+            conversation_bot = ConversationBot(config, None, None)
+            first_chat = True
             # 获取当前屏幕的尺寸
             width, height = pyautogui.size()
+            t = 0
+            while t < 100:
+                response = None
 
-            # 截取屏幕左上角 (0, 0) 到右下角 (width, height) 的区域
-            screenshot = pyautogui.screenshot(region=(0, 0, width, height))
+                if first_chat:
+                    first_chat = False
+                    response = '你好，我的主人现在不在使用微信，我是一个人工智能，我可以在能力范围内陪你聊天，或者回答你的一些问题。请注意，因为我的主人是个笨蛋，所以我只能读懂单行文字，而且不能一次性读取多条消息。我的记忆大概有100s左右，如果100s左右没收到你的消息，那么我会忘了我们曾经聊过天。那么，让我们开始对话吧。'
 
-            # 使用 pytesseract 库识别图像中的文字
-            text = image_to_string(screenshot)
+                else:
+                    # 寻找聊天气泡的位置
+                    box = pyautogui.locateOnScreen('imgs/bubble.png',
+                                                   confidence=0.85,
+                                                   region=(0, 0, width,
+                                                           height))
+                    if box:
+                        # 截取屏幕左上角 (a, b) 到右下角 (c, d) 的区域
+                        screenshot = pyautogui.screenshot(region=(box.left,
+                                                                  box.top,
+                                                                  width,
+                                                                  box.height))
+                        # 使用 pytesseract 库识别图像中的文字
+                        text = pytesseract.image_to_string(screenshot,
+                                                           lang='chi_sim')
+                        print('识别内容为：', text)
+                        try:
+                            conversation_bot.action(text)
+                            response = conversation_bot.response
+                        except Exception:
+                            response = '糟糕，我的大脑暂时无法工作了，可能是 OpenAI 那边出了一些问题~我没法和你聊天啦！如果你继续和我讲话，我可能随机给你讲个笑话或者段子。'
+                        # 输出识别结果
+                        print('回复内容为：', response)
 
-            # 输出识别结果
-            print(text)
-            pyautogui.hotkey('ctrl', 'v')
-            time.sleep(0.5)
-            print("输入:", inputValue)
+                if response:
+                    # 发送识别结果:
+                    pyperclip.copy(response)
+                    location = pyautogui.locateCenterOnScreen('imgs/send.png',
+                                                              confidence=0.9)
+                    if location is not None:
+                        t = 0
+                        pyautogui.hotkey('ctrl', 'v')
+                        pyautogui.click(location.x,
+                                        location.y,
+                                        clicks=1,
+                                        interval=0.2,
+                                        duration=0.2,
+                                        button='left')
+                    else:
+                        print('没有找到发送按钮，出错了')
+                print(f'还有{100-t}s关闭会话')
+                t += 1
+                time.sleep(1)
+
         #5代表等待
         elif cmdType.value == 5.0:
             #取图片名称
