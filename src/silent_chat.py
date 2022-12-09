@@ -8,6 +8,7 @@ import pyperclip
 #pyautogui库其他用法 https://blog.csdn.net/qingfengxd1/article/details/108270159
 
 def mouseClick(clickTimes,lOrR,img,reTry):
+    img = 'imgs/' + img
     if reTry == 1: # 重试直到成功一次
         while True:
             location=pyautogui.locateCenterOnScreen(img,confidence=0.9)
@@ -150,16 +151,16 @@ def mainWork(img):
         i += 1
 
 if __name__ == '__main__':
-    file = 'cmd.xls'
+    file = 'cmd/cmd.xls'
     #打开文件
     wb = xlrd.open_workbook(filename=file)
     #通过索引获取表格sheet页
     sheet1 = wb.sheet_by_index(0)
-    print('欢迎使用不高兴就喝水牌RPA~')
+    print('欢迎使用自动回复机器人~')
     #数据检查
     checkCmd = dataCheck(sheet1)
     if checkCmd:
-        key=input('选择功能: 1.做一次 2.循环到死 \n')
+        key=input('选择功能: 1.只回复一次 2.循环回复 \n')
         if key=='1':
             #循环拿出每一行指令
             mainWork(sheet1)
