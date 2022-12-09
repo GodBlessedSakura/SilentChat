@@ -1,44 +1,67 @@
-import pyautogui # 操纵鼠标和键盘的API
+import pyautogui  # 操纵鼠标和键盘的API
 import time
 import xlrd
 import pyperclip
+import uuid
+from PIL import Image
+from pytesseract import image_to_string
 
 #定义鼠标事件
 
 #pyautogui库其他用法 https://blog.csdn.net/qingfengxd1/article/details/108270159
 
-def mouseClick(clickTimes,lOrR,img,reTry):
+
+def mouseClick(clickTimes, lOrR, img, reTry):
     img = 'imgs/' + img
-    if reTry == 1: # 重试直到成功一次
+    if reTry == 1:  # 重试直到成功一次
         while True:
-            location=pyautogui.locateCenterOnScreen(img,confidence=0.9)
+            location = pyautogui.locateCenterOnScreen(img, confidence=0.9)
             if location is not None:
-                pyautogui.click(location.x,location.y,clicks=clickTimes,interval=0.2,duration=0.2,button=lOrR)
+                pyautogui.click(location.x,
+                                location.y,
+                                clicks=clickTimes,
+                                interval=0.2,
+                                duration=0.2,
+                                button=lOrR)
                 break
             print(img)
             print("未找到匹配图片,0.1秒后重试")
             time.sleep(0.1)
-    elif reTry == -1: # 一直重复
+    elif reTry == -1:  # 一直重复
         while True:
-            location=pyautogui.locateCenterOnScreen(img,confidence=0.9)
+            location = pyautogui.locateCenterOnScreen(img, confidence=0.9)
             if location is not None:
-                pyautogui.click(location.x,location.y,clicks=clickTimes,interval=0.2,duration=0.2,button=lOrR)
+                pyautogui.click(location.x,
+                                location.y,
+                                clicks=clickTimes,
+                                interval=0.2,
+                                duration=0.2,
+                                button=lOrR)
             time.sleep(0.1)
-    elif reTry > 1: # 重试 i + 1 次
+    elif reTry > 1:  # 重试 i + 1 次
         i = 1
         while i < reTry + 1:
-            location=pyautogui.locateCenterOnScreen(img,confidence=0.9)
+            location = pyautogui.locateCenterOnScreen(img, confidence=0.9)
             if location is not None:
-                pyautogui.click(location.x,location.y,clicks=clickTimes,interval=0.2,duration=0.2,button=lOrR)
+                pyautogui.click(location.x,
+                                location.y,
+                                clicks=clickTimes,
+                                interval=0.2,
+                                duration=0.2,
+                                button=lOrR)
                 print("重复")
                 i += 1
             time.sleep(0.1)
-    elif reTry == 0: # 仅仅执行一次
-        location=pyautogui.locateCenterOnScreen(img,confidence=0.9)
+    elif reTry == 0:  # 仅仅执行一次
+        location = pyautogui.locateCenterOnScreen(img, confidence=0.9)
         if location is not None:
-            pyautogui.click(location.x,location.y,clicks=clickTimes,interval=0.2,duration=0.2,button=lOrR)
+            pyautogui.click(location.x,
+                            location.y,
+                            clicks=clickTimes,
+                            interval=0.2,
+                            duration=0.2,
+                            button=lOrR)
         time.sleep(0.1)
-
 
 
 # 数据检查
@@ -52,7 +75,7 @@ def mouseClick(clickTimes,lOrR,img,reTry):
 def dataCheck(sheet1):
     checkCmd = True
     #行数检查
-    if sheet1.nrows<2:
+    if sheet1.nrows < 2:
         print("没数据啊哥")
         checkCmd = False
     #每行数据检查
@@ -60,34 +83,38 @@ def dataCheck(sheet1):
     while i < sheet1.nrows:
         # 第1列 操作类型检查
         cmdType = sheet1.row(i)[0]
-        if cmdType.ctype != 2 or (cmdType.value != 1.0 and cmdType.value != 2.0 and cmdType.value != 3.0 
-        and cmdType.value != 4.0 and cmdType.value != 5.0 and cmdType.value != 6.0 and cmdType.value != 7.0):
-            print('第',i+1,"行,第1列数据有毛病")
+        if cmdType.ctype != 2 or (cmdType.value != 1.0 and cmdType.value != 2.0
+                                  and cmdType.value != 3.0 and
+                                  cmdType.value != 4.0 and cmdType.value != 5.0
+                                  and cmdType.value != 6.0
+                                  and cmdType.value != 7.0):
+            print('第', i + 1, "行,第1列数据有毛病")
             checkCmd = False
         # 第2列 内容检查
         cmdValue = sheet1.row(i)[1]
         # 读图点击类型指令，内容必须为字符串类型
-        if cmdType.value ==1.0 or cmdType.value == 2.0 or cmdType.value == 3.0:
+        if cmdType.value == 1.0 or cmdType.value == 2.0 or cmdType.value == 3.0:
             if cmdValue.ctype != 1:
-                print('第',i+1,"行,第2列数据有毛病")
+                print('第', i + 1, "行,第2列数据有毛病")
                 checkCmd = False
         # 输入类型，内容不能为空
         if cmdType.value == 4.0:
             if cmdValue.ctype == 0:
-                print('第',i+1,"行,第2列数据有毛病")
+                print('第', i + 1, "行,第2列数据有毛病")
                 checkCmd = False
         # 等待类型，内容必须为数字
         if cmdType.value == 5.0:
             if cmdValue.ctype != 2:
-                print('第',i+1,"行,第2列数据有毛病")
+                print('第', i + 1, "行,第2列数据有毛病")
                 checkCmd = False
         # 滚轮事件，内容必须为数字
         if cmdType.value == 6.0:
             if cmdValue.ctype != 2:
-                print('第',i+1,"行,第2列数据有毛病")
+                print('第', i + 1, "行,第2列数据有毛病")
                 checkCmd = False
         i += 1
     return checkCmd
+
 
 #任务
 def mainWork(img):
@@ -101,8 +128,8 @@ def mainWork(img):
             reTry = 1
             if sheet1.row(i)[2].ctype == 2 and sheet1.row(i)[2].value != 0:
                 reTry = sheet1.row(i)[2].value
-            mouseClick(1,"left",img,reTry)
-            print("单击左键",img)
+            mouseClick(1, "left", img, reTry)
+            print("单击左键", img)
         #2代表双击左键
         elif cmdType.value == 2.0:
             #取图片名称
@@ -111,8 +138,8 @@ def mainWork(img):
             reTry = 1
             if sheet1.row(i)[2].ctype == 2 and sheet1.row(i)[2].value != 0:
                 reTry = sheet1.row(i)[2].value
-            mouseClick(2,"left",img,reTry)
-            print("双击左键",img)
+            mouseClick(2, "left", img, reTry)
+            print("双击左键", img)
         #3代表右键
         elif cmdType.value == 3.0:
             #取图片名称
@@ -121,34 +148,48 @@ def mainWork(img):
             reTry = 1
             if sheet1.row(i)[2].ctype == 2 and sheet1.row(i)[2].value != 0:
                 reTry = sheet1.row(i)[2].value
-            mouseClick(1,"right",img,reTry)
-            print("右键",img) 
+            mouseClick(1, "right", img, reTry)
+            print("右键", img)
         #4代表输入
         elif cmdType.value == 4.0:
-            inputValue = sheet1.row(i)[1].value
-            pyperclip.copy(inputValue)
-            pyautogui.hotkey('ctrl','v')
+            # inputValue = sheet1.row(i)[1].value
+            # pyperclip.copy(inputValue)
+
+            # 进行截图
+            # 获取当前屏幕的尺寸
+            width, height = pyautogui.size()
+
+            # 截取屏幕左上角 (0, 0) 到右下角 (width, height) 的区域
+            screenshot = pyautogui.screenshot(region=(0, 0, width, height))
+
+            # 使用 pytesseract 库识别图像中的文字
+            text = image_to_string(screenshot)
+
+            # 输出识别结果
+            print(text)
+            pyautogui.hotkey('ctrl', 'v')
             time.sleep(0.5)
-            print("输入:",inputValue)                                        
+            print("输入:", inputValue)
         #5代表等待
         elif cmdType.value == 5.0:
             #取图片名称
             waitTime = sheet1.row(i)[1].value
             time.sleep(waitTime)
-            print("等待",waitTime,"秒")
+            print("等待", waitTime, "秒")
         #6代表滚轮
         elif cmdType.value == 6.0:
             #取图片名称
             scroll = sheet1.row(i)[1].value
             pyautogui.scroll(int(scroll))
-            print("滚轮滑动",int(scroll),"距离")  
+            print("滚轮滑动", int(scroll), "距离")
         #7代表进行一次判断是否单击
         elif cmdType.value == 7.0:
             #取图片名称
             img = sheet1.row(i)[1].value
-            mouseClick(1,"left",img,0)
-            print("单击左键",img)                  
+            mouseClick(1, "left", img, 0)
+            print("单击左键", img)
         i += 1
+
 
 if __name__ == '__main__':
     file = 'cmd/cmd.xls'
@@ -160,14 +201,14 @@ if __name__ == '__main__':
     #数据检查
     checkCmd = dataCheck(sheet1)
     if checkCmd:
-        key=input('选择功能: 1.只回复一次 2.循环回复 \n')
-        if key=='1':
+        key = input('选择功能: 1.只回复一次 2.循环回复 \n')
+        if key == '1':
             #循环拿出每一行指令
             mainWork(sheet1)
-        elif key=='2':
+        elif key == '2':
             while True:
                 mainWork(sheet1)
                 time.sleep(0.1)
-                print("等待0.1秒")    
+                print("等待0.1秒")
     else:
         print('输入有误或者已经退出!')
